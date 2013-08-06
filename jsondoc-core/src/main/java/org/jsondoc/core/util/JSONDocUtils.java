@@ -27,6 +27,8 @@ import org.jsondoc.core.pojo.JSONDoc;
 import org.reflections.Reflections;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 public class JSONDocUtils {
 	public static final String UNDEFINED = "undefined";
@@ -69,23 +71,49 @@ public class JSONDocUtils {
 	private static List<ApiMethodDoc> getApiMethodDocs(Class<?> controller) {
 		List<ApiMethodDoc> apiMethodDocs = new ArrayList<ApiMethodDoc>();
 		Method[] methods = controller.getMethods();
+
+        // ToDo -- @ApiMethod can only have one 'verb' parameter, but
+        //         spring mvc @RequestMapping can have an array, so
+        //         we need to loop in those cases.
+
 		for (Method method : methods) {
 			if(method.isAnnotationPresent(ApiMethod.class)) {
+
+                // Base Api Method
 				ApiMethodDoc apiMethodDoc = ApiMethodDoc.buildFromAnnotation(method.getAnnotation(ApiMethod.class));
-				
-				if(method.isAnnotationPresent(ApiHeaders.class)) {
+                boolean hasSpringRequestMapping = method.isAnnotationPresent(RequestMapping.class);
+                RequestMapping requestMappingAnnotation = null;
+                if (hasSpringRequestMapping) {
+                    requestMappingAnnotation = method.getAnnotation(RequestMapping.class);
+                }
+                if (hasSpringRequestMapping) {
+                    ApiMethodDoc.augmentFromRequestMappingAnnotation(apiMethodDoc, requestMappingAnnotation);
+                }
+
+                // Api Headers
+                if(method.isAnnotationPresent(ApiHeaders.class)) {
 					apiMethodDoc.setHeaders(ApiHeaderDoc.buildFromAnnotation(method.getAnnotation(ApiHeaders.class)));
 				}
-				
+                if (hasSpringRequestMapping) {
+                    ApiHeaderDoc.augmentFromRequestMappingAnnotation(apiMethodDoc, requestMappingAnnotation);
+                }
+
+                // Api request parameters -- (the Spring annotations are processed in ApiParamDoc.getApiParamDocs
 				apiMethodDoc.setUrlparameters(ApiParamDoc.getApiParamDocs(method));
-				
+
 				apiMethodDoc.setBodyobject(ApiBodyObjectDoc.buildFromAnnotation(method));
-				
+
+                // Response object
 				if(method.isAnnotationPresent(ApiResponseObject.class)) {
-					apiMethodDoc.setResponse(ApiResponseObjectDoc.buildFromAnnotation(method.getAnnotation(ApiResponseObject.class), method));
+					apiMethodDoc.setResponse(ApiResponseObjectDoc.buildFromAnnotation(
+                            method.getAnnotation(ApiResponseObject.class), method));
 				}
-				
-				if(method.isAnnotationPresent(ApiErrors.class)) {
+                if (method.isAnnotationPresent(ResponseBody.class)) {
+                    ApiResponseObjectDoc.augmentFromResponseBodyAnnotation(apiMethodDoc,
+                            method.getAnnotation(ResponseBody.class));
+                }
+
+                if(method.isAnnotationPresent(ApiErrors.class)) {
 					apiMethodDoc.setApierrors(ApiErrorDoc.buildFromAnnotation(method.getAnnotation(ApiErrors.class)));
 				}
 				
@@ -97,14 +125,15 @@ public class JSONDocUtils {
 	}
 	
 	public static String getObjectNameFromAnnotatedClass(Class<?> clazz) {
-		Class<?> annotatedClass = Reflections.forName(clazz.getName());
-		if(annotatedClass.isAnnotationPresent(ApiObject.class)) {
-			return annotatedClass.getAnnotation(ApiObject.class).name();
-		}
-		return clazz.getSimpleName().toLowerCase();
-	}
-	
-	public static boolean isMultiple(Method method) {
+        System.out.println("==== getObjectNameFromAnnotatedClass: clazz: " + clazz.toString());
+        Class<?> annotatedClass = Reflections.forName(clazz.getName());
+        if (annotatedClass.isAnnotationPresent(ApiObject.class)) {
+            return annotatedClass.getAnnotation(ApiObject.class).name();
+        }
+        return clazz.getSimpleName().toLowerCase();
+    }
+
+    public static boolean isMultiple(Method method) {
 		if(Collection.class.isAssignableFrom(method.getReturnType()) || method.getReturnType().isArray()) {
 			return true;
 		}

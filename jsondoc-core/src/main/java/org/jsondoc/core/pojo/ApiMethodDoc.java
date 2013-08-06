@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.UUID;
 
 import org.jsondoc.core.annotation.ApiMethod;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 public class ApiMethodDoc {
 	public String jsondocId = UUID.randomUUID().toString();
@@ -29,6 +31,42 @@ public class ApiMethodDoc {
 		apiMethodDoc.setProduces(Arrays.asList(annotation.produces()));
 		return apiMethodDoc;
 	}
+
+    public static ApiMethodDoc augmentFromRequestMappingAnnotation(ApiMethodDoc apiMethodDoc, RequestMapping annotation) {
+        //apiMethodDoc.setPath();
+        if (annotation.consumes() != null && annotation.consumes().length != 0) {
+            apiMethodDoc.setConsumes(Arrays.asList(annotation.consumes()));
+        }
+        if (annotation.value() != null && annotation.value().length > 0) {
+            apiMethodDoc.setPath(annotation.value()[0]);
+        }
+        if (annotation.produces() != null && annotation.produces().length != 0) {
+            apiMethodDoc.setProduces(Arrays.asList(annotation.produces()));
+        }
+        if (annotation.method() != null && annotation.method().length != 0) {
+            ApiVerb verb = getVerbFromSpringType(annotation.method()[0]);
+            apiMethodDoc.setVerb(verb);
+        }
+        // ToDo - set fields that can be extracted from the Spring annotation
+        return apiMethodDoc;
+    }
+
+
+    public static ApiVerb getVerbFromSpringType(RequestMethod method) {
+        if (method == RequestMethod.GET) {
+            return ApiVerb.GET;
+        } else if (method == RequestMethod.POST) {
+            return ApiVerb.POST;
+        } else if (method == RequestMethod.PUT) {
+            return ApiVerb.PUT;
+        } else if (method == RequestMethod.DELETE) {
+            return ApiVerb.DELETE;
+//        } else if (method == RequestMethod.HEAD) {
+//            return ApiVerb.HEAD;
+        } else {
+            return null;
+        }
+    }
 
 	public ApiMethodDoc() {
 		super();

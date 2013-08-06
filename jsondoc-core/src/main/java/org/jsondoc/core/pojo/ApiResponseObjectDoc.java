@@ -1,14 +1,15 @@
 package org.jsondoc.core.pojo;
 
+import org.jsondoc.core.annotation.ApiResponseObject;
+import org.jsondoc.core.util.JSONDocUtils;
+import org.springframework.web.bind.annotation.ResponseBody;
+
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
-
-import org.jsondoc.core.annotation.ApiResponseObject;
-import org.jsondoc.core.util.JSONDocUtils;
 
 public class ApiResponseObjectDoc {
 	public String jsondocId = UUID.randomUUID().toString();
@@ -53,6 +54,12 @@ public class ApiResponseObjectDoc {
 
 		return new String[] { JSONDocUtils.getObjectNameFromAnnotatedClass(method.getReturnType()), null, null, null };
 	}
+
+    public static ApiMethodDoc augmentFromResponseBodyAnnotation(ApiMethodDoc apiMethodDoc, ResponseBody annotation) {
+        final ApiResponseObjectDoc response = apiMethodDoc.getResponse();
+        // ToDo - set fields that can be extracted from the Spring annotation
+        return apiMethodDoc;
+    }
 
 	public ApiResponseObjectDoc(String object, String mapKeyObject, String mapValueObject, String multiple, String map) {
 		super();

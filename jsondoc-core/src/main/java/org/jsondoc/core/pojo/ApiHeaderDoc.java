@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.jsondoc.core.annotation.ApiHeader;
 import org.jsondoc.core.annotation.ApiHeaders;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 public class ApiHeaderDoc {
 	public String jsondocId = UUID.randomUUID().toString();
@@ -25,6 +26,11 @@ public class ApiHeaderDoc {
 		}
 		return docs;
 	}
+
+    public static ApiMethodDoc augmentFromRequestMappingAnnotation(ApiMethodDoc apiMethodDoc, RequestMapping annotation) {
+        // ToDo - set fields that can be extracted from the Spring annotation
+        return apiMethodDoc;
+    }
 
 	public String getName() {
 		return name;
