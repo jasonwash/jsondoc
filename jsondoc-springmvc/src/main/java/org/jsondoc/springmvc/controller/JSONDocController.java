@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Controller
 @RequestMapping(value = "/jsondoc")
 public class JSONDocController {
-	@Autowired
-	private ServletContext servletContext;
+
+    private String basePackage;
 	private String version;
 	private String basePath;
 
@@ -27,10 +27,14 @@ public class JSONDocController {
 		this.basePath = basePath;
 	}
 
-	@RequestMapping(method = RequestMethod.GET, produces=MediaType.APPLICATION_JSON_VALUE)
+    public void setBasePackage(String basePackage) {
+        this.basePackage = basePackage;
+    }
+
+    @RequestMapping(method = RequestMethod.GET, produces=MediaType.APPLICATION_JSON_VALUE)
 	public @ResponseBody
 	JSONDoc getApi() {
-		return JSONDocUtils.getApiDoc(servletContext, version, basePath);
+		return JSONDocUtils.getApiDoc(basePackage, version, basePath);
 	}
 
 }

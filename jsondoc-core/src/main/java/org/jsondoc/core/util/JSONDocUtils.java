@@ -38,8 +38,8 @@ public class JSONDocUtils {
 	 * Returns the main <code>ApiDoc</code>, containing <code>ApiMethodDoc</code> and <code>ApiObjectDoc</code> objects
 	 * @return An <code>ApiDoc</code> object
 	 */
-	public static JSONDoc getApiDoc(ServletContext servletContext, String version, String basePath) {
-		reflections = new Reflections(new ConfigurationBuilder().setUrls(ClasspathHelper.forWebInfClasses(servletContext)));
+	public static JSONDoc getApiDoc(String basePackage, String version, String basePath) {
+		reflections = new Reflections(basePackage);
 		JSONDoc apiDoc = new JSONDoc(version, basePath);
 		apiDoc.setApis(getApiDocs(reflections.getTypesAnnotatedWith(Api.class)));
 		apiDoc.setObjects(getApiObjectDocs(reflections.getTypesAnnotatedWith(ApiObject.class)));
