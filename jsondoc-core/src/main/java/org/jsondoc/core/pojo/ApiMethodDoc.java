@@ -33,24 +33,59 @@ public class ApiMethodDoc {
 	}
 
     public static ApiMethodDoc augmentFromRequestMappingAnnotation(ApiMethodDoc apiMethodDoc, RequestMapping annotation) {
-        //apiMethodDoc.setPath();
+
+        // consumes
         if (annotation.consumes() != null && annotation.consumes().length != 0) {
             apiMethodDoc.setConsumes(Arrays.asList(annotation.consumes()));
         }
-        if (annotation.value() != null && annotation.value().length > 0) {
-            apiMethodDoc.setPath(annotation.value()[0]);
+
+        // path
+        String pathFromSpringAnnotation = getPathFromSpringRequestMapping(annotation);
+        if (pathFromSpringAnnotation != null) {
+            // ToDo : combine path from class annotation (if exists) with method annotation
+            apiMethodDoc.setPath(pathFromSpringAnnotation);
+        } else {
+            if (annotation.value() != null && annotation.value().length > 0) {
+                apiMethodDoc.setPath(annotation.value()[0]);
+            }
         }
+
+        // produces
         if (annotation.produces() != null && annotation.produces().length != 0) {
-            apiMethodDoc.setProduces(Arrays.asList(annotation.produces()));
+            List<String> springProducesValues = getProducesStringFromSpringReqMapProduces(annotation);
+            if (springProducesValues.isEmpty()) {
+                apiMethodDoc.setProduces(Arrays.asList(annotation.produces()));
+            } else {
+                apiMethodDoc.setProduces(springProducesValues);
+            }
         }
+
+        // verb
         if (annotation.method() != null && annotation.method().length != 0) {
             ApiVerb verb = getVerbFromSpringType(annotation.method()[0]);
             apiMethodDoc.setVerb(verb);
         }
-        // ToDo - set fields that can be extracted from the Spring annotation
+
         return apiMethodDoc;
     }
 
+    public static List<String> getProducesStringFromSpringReqMapProduces(RequestMapping requestMapping) {
+        List<String> retval = new ArrayList<String>();
+        if (requestMapping != null) {
+            String[] produces = requestMapping.produces();
+            if (produces.length > 0) {
+                retval.addAll(Arrays.asList(produces));
+            }
+        }
+        return retval;
+    }
+
+    public static String getPathFromSpringRequestMapping(RequestMapping requestMapping) {
+        if (requestMapping == null || requestMapping.value().length == 0) {
+            return null;
+        }
+        return requestMapping.value()[0];
+    }
 
     public static ApiVerb getVerbFromSpringType(RequestMethod method) {
         if (method == RequestMethod.GET) {

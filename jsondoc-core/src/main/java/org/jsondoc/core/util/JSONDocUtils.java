@@ -125,7 +125,6 @@ public class JSONDocUtils {
 	}
 	
 	public static String getObjectNameFromAnnotatedClass(Class<?> clazz) {
-        System.out.println("==== getObjectNameFromAnnotatedClass: clazz: " + clazz.toString());
         Class<?> annotatedClass = Reflections.forName(clazz.getName());
         if (annotatedClass.isAnnotationPresent(ApiObject.class)) {
             return annotatedClass.getAnnotation(ApiObject.class).name();
