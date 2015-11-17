@@ -1,39 +1,19 @@
 package org.jsondoc.core.util;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-
-import javax.servlet.ServletContext;
-
-import org.jsondoc.core.annotation.Api;
-import org.jsondoc.core.annotation.ApiErrors;
-import org.jsondoc.core.annotation.ApiHeaders;
-import org.jsondoc.core.annotation.ApiMethod;
-import org.jsondoc.core.annotation.ApiObject;
-import org.jsondoc.core.annotation.ApiResponseObject;
-import org.jsondoc.core.pojo.ApiBodyObjectDoc;
-import org.jsondoc.core.pojo.ApiDoc;
-import org.jsondoc.core.pojo.ApiErrorDoc;
-import org.jsondoc.core.pojo.ApiHeaderDoc;
-import org.jsondoc.core.pojo.ApiMethodDoc;
-import org.jsondoc.core.pojo.ApiObjectDoc;
-import org.jsondoc.core.pojo.ApiParamDoc;
-import org.jsondoc.core.pojo.ApiResponseObjectDoc;
-import org.jsondoc.core.pojo.JSONDoc;
+import org.jsondoc.core.annotation.*;
+import org.jsondoc.core.pojo.*;
+import org.reflections.ReflectionUtils;
 import org.reflections.Reflections;
-import org.reflections.util.ClasspathHelper;
-import org.reflections.util.ConfigurationBuilder;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.lang.reflect.Method;
+import java.util.*;
 
 public class JSONDocUtils {
 	public static final String UNDEFINED = "undefined";
 	private static Reflections reflections = null;
-	
+
 	/**
 	 * Returns the main <code>ApiDoc</code>, containing <code>ApiMethodDoc</code> and <code>ApiObjectDoc</code> objects
 	 * @return An <code>ApiDoc</code> object
@@ -45,7 +25,7 @@ public class JSONDocUtils {
 		apiDoc.setObjects(getApiObjectDocs(reflections.getTypesAnnotatedWith(ApiObject.class)));
 		return apiDoc;
 	}
-	
+
 	public static Set<ApiDoc> getApiDocs(Set<Class<?>> classes) {
 		Set<ApiDoc> apiDocs = new TreeSet<ApiDoc>();
 		for (Class<?> controller : classes) {
@@ -55,19 +35,24 @@ public class JSONDocUtils {
 		}
 		return apiDocs;
 	}
-	
+
 	public static Set<ApiObjectDoc> getApiObjectDocs(Set<Class<?>> classes) {
 		Set<ApiObjectDoc> pojoDocs = new TreeSet<ApiObjectDoc>();
 		for (Class<?> pojo : classes) {
 			ApiObject annotation = pojo.getAnnotation(ApiObject.class);
 			ApiObjectDoc pojoDoc = ApiObjectDoc.buildFromAnnotation(annotation, pojo);
-			if(annotation.show()) {
+
+			// this should handle cases where spring mvc api objects are missing the annotation.
+			if(annotation != null && annotation.show()) {
+				pojoDocs.add(pojoDoc);
+			} else if (annotation == null && pojoDoc != null) {
 				pojoDocs.add(pojoDoc);
 			}
+
 		}
 		return pojoDocs;
 	}
-	
+
 	private static List<ApiMethodDoc> getApiMethodDocs(Class<?> controller) {
 		List<ApiMethodDoc> apiMethodDocs = new ArrayList<ApiMethodDoc>();
 		Method[] methods = controller.getMethods();
@@ -116,16 +101,17 @@ public class JSONDocUtils {
                 if(method.isAnnotationPresent(ApiErrors.class)) {
 					apiMethodDoc.setApierrors(ApiErrorDoc.buildFromAnnotation(method.getAnnotation(ApiErrors.class)));
 				}
-				
+
 				apiMethodDocs.add(apiMethodDoc);
 			}
-			
+
 		}
 		return apiMethodDocs;
 	}
-	
+
 	public static String getObjectNameFromAnnotatedClass(Class<?> clazz) {
-        Class<?> annotatedClass = Reflections.forName(clazz.getName());
+//        Class<?> annotatedClass = Reflections.forName(clazz.getName());
+        Class<?> annotatedClass = ReflectionUtils.forName(clazz.getName());
         if (annotatedClass.isAnnotationPresent(ApiObject.class)) {
             return annotatedClass.getAnnotation(ApiObject.class).name();
         }
@@ -138,12 +124,12 @@ public class JSONDocUtils {
 		}
 		return false;
 	}
-	
+
 	public static boolean isMultiple(Class<?> clazz) {
 		if(Collection.class.isAssignableFrom(clazz) || clazz.isArray()) {
 			return true;
 		}
 		return false;
 	}
-	
+
 }
