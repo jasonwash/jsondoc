@@ -1,14 +1,15 @@
 package org.jsondoc.core.pojo;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jsondoc.core.annotation.ApiObjectField;
+import org.jsondoc.core.util.JSONDocUtils;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
-
-import org.jsondoc.core.annotation.ApiObjectField;
-import org.jsondoc.core.util.JSONDocUtils;
 
 public class ApiObjectFieldDoc {
 	public String jsondocId = UUID.randomUUID().toString();
@@ -25,15 +26,27 @@ public class ApiObjectFieldDoc {
 	public static ApiObjectFieldDoc buildFromAnnotation(ApiObjectField annotation, Field field) {
 		ApiObjectFieldDoc apiPojoFieldDoc = new ApiObjectFieldDoc();
 		apiPojoFieldDoc.setName(field.getName());
-		apiPojoFieldDoc.setDescription(annotation.description());
+		apiPojoFieldDoc.setDescription(annotation != null ? annotation.description() : "");
 		String[] typeChecks = getFieldObject(field);
 		apiPojoFieldDoc.setType(typeChecks[0]);
 		apiPojoFieldDoc.setMultiple(String.valueOf(JSONDocUtils.isMultiple(field.getType())));
-		apiPojoFieldDoc.setFormat(annotation.format());
-		apiPojoFieldDoc.setAllowedvalues(annotation.allowedvalues());
+		apiPojoFieldDoc.setFormat(annotation != null ? annotation.format() : "");
+		apiPojoFieldDoc.setAllowedvalues(annotation != null ? annotation.allowedvalues() : new String[] {});
 		apiPojoFieldDoc.setMapKeyObject(typeChecks[1]);
 		apiPojoFieldDoc.setMapValueObject(typeChecks[2]);
 		apiPojoFieldDoc.setMap(typeChecks[3]);
+
+		JsonProperty jsonPropFasterXml = field.getAnnotation(JsonProperty.class);
+		org.codehaus.jackson.annotate.JsonProperty jsonPropOldJackson = field.getAnnotation(
+				org.codehaus.jackson.annotate.JsonProperty.class);
+
+		if (jsonPropFasterXml != null && jsonPropFasterXml.value() != null
+				&& !jsonPropFasterXml.value().trim().isEmpty()) {
+			apiPojoFieldDoc.setName(jsonPropFasterXml.value());
+		} else if (jsonPropOldJackson != null && jsonPropOldJackson.value() != null
+				&& !jsonPropOldJackson.value().trim().isEmpty()) {
+			apiPojoFieldDoc.setName(jsonPropOldJackson.value());
+		}
 		return apiPojoFieldDoc;
 	}
 
